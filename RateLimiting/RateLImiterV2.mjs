@@ -1,21 +1,22 @@
 class RateLimiter{
-    #requestSet=new Map();
-    #windowMs;
-    #limit;
+    #requestSet=new Map();  // map<userId,requests>
+    #windowMs;      // limit time duration
+    #limit;         // limit of requests
 
-    constructor(limit, windowMs){
+    constructor(limit, windowMs){           // construct a rate limiter object with a limit duration and requests
         if(!Number.isInteger(limit) || limit<=0) throw new Error("Invalid limit value");
         if(!Number.isInteger(windowMs) || windowMs<=0) throw new Error("Invalid windowMs value");
         this.#limit = limit;
         this.#windowMs = windowMs;
         console.log(`Rate limiter initialized with ${limit}requests/${windowMs}ms!`);
     }
-    allowRequest(userId){
-        if(typeof userId !== "string" || userId.trim() === "") throw new Error("Invalid userId");
 
-        const currentTimestamp = new Date().getTime();
-        const windowStart = currentTimestamp - this.#windowMs; 
-        let requests = this.#requestSet.get(userId);
+    allowRequest(userId){                                                                   // method to check if current request will be accepted or rejected
+        if(typeof userId !== "string" || userId.trim() === "") throw new Error("Invalid userId");   // userId validation
+
+        const currentTimestamp = new Date().getTime();              // get current ms timestamp
+        const windowStart = currentTimestamp - this.#windowMs;      // valid window's initial timestamp
+        let requests = this.#requestSet.get(userId);                // requests list []
 
         if(!requests) requests = [];    // if no request is stored, initialize the list;
 
@@ -29,12 +30,12 @@ class RateLimiter{
             //can not be added to queue
             const retryBackoff = Math.max(
                 0,
-                requests[0]+this.#windowMs - currentTimestamp
+                requests[0]+this.#windowMs - currentTimestamp       // time left to begin a new window wrt first request's timestamp in queue;
             );
 
-            this.#requestSet.set(userId,requests);
+            this.#requestSet.set(userId,requests);      // set the user's request list in request set 
 
-            return {
+            return {                // return the response
                 Allowed: false,
                 RemainingSlots:0,
                 retryBackoff
@@ -42,9 +43,9 @@ class RateLimiter{
 
         }// if can be added;
         requests.push(currentTimestamp);        // add timestamp to requestSet
-        this.#requestSet.set(userId,requests);
+        this.#requestSet.set(userId,requests);      // set the user's request list in request set 
         return {
-            Allowed: true,
+            Allowed: true,                  // return the response
             RemainingSlots: this.#limit - requests.length,
             retryBackoff:0
         } 
@@ -54,7 +55,7 @@ class RateLimiter{
 }
 
 
-
+// to test the behavior in web console
 const button1 = document.getElementById("button1");
 button1.addEventListener("click",()=>{
     console.log(rateLimiter.allowRequest("user1"));
